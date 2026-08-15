@@ -249,7 +249,7 @@
               <input id="fDept" type="text" placeholder="المستخدم أو القسم" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm" />
             </div>
           </div>
-          <p class="text-[11px] text-slate-500">💡 صورة الـ Asset/Serial يمكن قراءتها تلقائياً عبر زر OCR بالأسفل. النمط المتوقع: <code class="bg-slate-100 px-1 rounded">EX91X</code> + 8 أرقام.</p>
+          <p class="text-[11px] text-slate-500">💡 اضغط <strong>🔍 OCR Asset</strong> على الصورة لقراءة الرقم تلقائياً بالذكاء الاصطناعي (دقة عالية حتى مع الصور المعقدة). النمط المتوقع: <code class="bg-slate-100 px-1 rounded">EX91X</code> + 8 أرقام.</p>
         </section>
 
         <hr class="border-slate-200" />
@@ -864,8 +864,9 @@
               </button>
             </div>
             <div class="absolute bottom-1 left-1 right-1 flex gap-1">
-              <button class="ocr-btn flex-1 h-7 text-[10px] bg-white/90 hover:bg-white rounded" data-target="assetNo">OCR Asset</button>
-              <button class="ocr-btn flex-1 h-7 text-[10px] bg-white/90 hover:bg-white rounded" data-target="serialNumber">OCR Serial</button>
+              <button class="ocr-btn flex-1 h-7 text-[10px] bg-teal-600 text-white hover:bg-teal-700 rounded font-medium" data-target="assetNo">🔍 OCR Asset</button>
+              <button class="ocr-btn flex-1 h-7 text-[10px] bg-teal-600 text-white hover:bg-teal-700 rounded font-medium" data-target="serialNumber">🔍 OCR Serial</button>
+              <button class="ocr-local-btn col-span-2 h-7 text-[10px] bg-slate-100 text-slate-600 hover:bg-slate-200 rounded mt-1" data-target="assetNo">OCR محلي (أوفلاين)</button>
             </div>
           </div>`;
       }).join('');
@@ -901,9 +902,95 @@
           const photoId = parseInt(btn.closest('[data-photo-id]').dataset.photoId);
           const photo = currentPhotos.find(p => p.id === photoId);
           if (!photo) return;
+          await runSmartOcr(photo.blob, target);
+        });
+      });
+      grid.querySelectorAll('.ocr-local-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (ocrBusy) return;
+          const target = btn.dataset.target;
+          const photoId = parseInt(btn.closest('[data-photo-id]').dataset.photoId);
+          const photo = currentPhotos.find(p => p.id === photoId);
+          if (!photo) return;
           await runOcr(photo.blob, target);
         });
       });
+    }
+
+    // ---------- Convert blob to data URL ----------
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    // ---------- Smart OCR via VLM API ----------
+    // Uses the vision model (much more accurate than Tesseract for real photos).
+    // Falls back to Tesseract if API fails or is unreachable.
+    async function runSmartOcr(blob, target) {
+      if (ocrBusy) return;
+      ocrBusy = true;
+      const box = document.getElementById('ocrProgressBox');
+      const bar = document.getElementById('ocrProgressBar');
+      const text = document.getElementById('ocrProgressText');
+      box.classList.remove('hidden');
+      bar.style.width = '20%';
+      text.textContent = 'جارٍ قراءة الرقم بالذكاء الاصطناعي...';
+
+      try {
+        // Convert blob to data URL
+        const dataUrl = await blobToDataUrl(blob);
+        bar.style.width = '40%';
+        text.textContent = 'جارٍ إرسال الصورة للسحابة...';
+
+        // Call the VLM API
+        const res = await fetch('/api/ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: dataUrl, target }),
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        bar.style.width = '80%';
+        text.textContent = 'جارٍ تحليل النتيجة...';
+        const data = await res.json();
+
+        bar.style.width = '100%';
+
+        if (data.ok && data.found && data.value) {
+          // Success
+          if (target === 'assetNo') {
+            document.getElementById('fAssetNo').value = data.value;
+          } else {
+            document.getElementById('fSerial').value = data.value;
+          }
+          toast(`تم التعرف على: ${data.value}`, 'success', 'راجع الرقم ثم اضغط حفظ');
+        } else if (data.ok && !data.found) {
+          // VLM couldn't find it — fall back to local Tesseract
+          toast('الذكاء الاصطناعي لم يجد الرقم، جارٍ المحاولة المحلية...', 'warning');
+          ocrBusy = false;
+          await runOcr(blob, target);
+          return;
+        } else {
+          throw new Error(data.error || 'API error');
+        }
+      } catch (err) {
+        console.error('Smart OCR failed, falling back to local OCR:', err);
+        toast('الذكاء الاصطناعي غير متاح، جارٍ OCR المحلي...', 'warning');
+        ocrBusy = false;
+        await runOcr(blob, target);
+        return;
+      } finally {
+        ocrBusy = false;
+        setTimeout(() => box.classList.add('hidden'), 1500);
+      }
     }
 
     // ---------- Image Preprocessing for OCR ----------
