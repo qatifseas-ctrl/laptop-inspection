@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
   <meta name="theme-color" content="#0f766e" />
   <title>توثيق ضرر اللابتوبات | Laptop Damage Inspection</title>
-
-  <!-- PWA / Mobile web app -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="فحص اللابتوبات" />
 
-  <!-- Tailwind Play CDN (for personal use - fine for this scale) -->
   <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
   <script>
     tailwind.config = {
@@ -20,88 +17,53 @@
         extend: {
           colors: {
             teal: {
-              50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4',
-              400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e',
-              800: '#115e59', 900: '#134e4a', 950: '#042f2e',
+              50:'#f0fdfa',100:'#ccfbf1',200:'#99f6e4',300:'#5eead4',400:'#2dd4bf',500:'#14b8a6',600:'#0d9488',700:'#0f766e',800:'#115e59',900:'#134e4a',950:'#042f2e',
             }
           },
           fontFamily: {
-            sans: ['Segoe UI', 'Tahoma', 'Noto Sans Arabic', 'system-ui', 'sans-serif'],
-            mono: ['Consolas', 'Monaco', 'Courier New', 'monospace'],
+            sans: ['Segoe UI','Tahoma','Noto Sans Arabic','system-ui','sans-serif'],
+            mono: ['Consolas','Monaco','Courier New','monospace'],
           }
         }
       }
     }
   </script>
 
-  <!-- Dexie.js for IndexedDB -->
   <script src="https://cdn.jsdelivr.net/npm/dexie@4.4.5/dist/dexie.min.js"></script>
-
-  <!-- SheetJS for Excel export -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- Tesseract.js for OCR -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
-
-  <!-- JSZip for zipping all photos -->
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <style>
     * { -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: 'Segoe UI', 'Tahoma', 'Noto Sans Arabic', system-ui, sans-serif;
+      font-family: 'Segoe UI','Tahoma','Noto Sans Arabic',system-ui,sans-serif;
       background: linear-gradient(to bottom, #f8fafc, #ffffff);
       min-height: 100vh;
     }
     [dir="rtl"] { text-align: right; }
-
-    /* Better touch targets */
-    button, [role="button"], a, input, select, textarea {
-      touch-action: manipulation;
-    }
-
-    /* Prevent iOS zoom on input focus */
+    button, [role="button"], a, input, select, textarea { touch-action: manipulation; }
     input, select, textarea { font-size: 16px; }
-    @media (min-width: 640px) {
-      input, select, textarea { font-size: inherit; }
-    }
-
-    /* Custom scrollbar */
+    @media (min-width: 640px) { input, select, textarea { font-size: inherit; } }
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    /* Sheet animation */
     .sheet-overlay { transition: opacity 0.2s ease; }
     .sheet-content { transition: transform 0.25s ease; }
-    .sheet-content.translate-x-full { transform: translateX(-100%); }
     [dir="rtl"] .sheet-content.translate-x-full { transform: translateX(100%); }
-
-    /* Toast animation */
+    [dir="ltr"] .sheet-content.translate-x-full { transform: translateX(-100%); }
     .toast-enter { animation: slideDown 0.25s ease forwards; }
     @keyframes slideDown {
       from { transform: translateY(-100%); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
-
-    /* Line clamp */
-    .line-clamp-1 {
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Hide number input arrows */
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
-    /* Safe area for iOS */
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
   </style>
 </head>
-<body class="text-slate-900 dark:text-slate-100">
+<body class="text-slate-900">
 
   <!-- ========== Top App Bar ========== -->
   <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200">
@@ -109,8 +71,7 @@
       <div class="flex items-center gap-2 min-w-0">
         <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white shrink-0">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="12" rx="2"/>
-            <path d="M2 20h20"/>
+            <rect x="3" y="4" width="18" height="12" rx="2"/><path d="M2 20h20"/>
           </svg>
         </div>
         <div class="min-w-0">
@@ -121,28 +82,20 @@
       <div class="flex items-center gap-1.5">
         <button id="btnExport" class="inline-flex items-center gap-1 px-3 py-2 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition disabled:opacity-50">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <path d="M14 2v6h6"/>
-            <path d="M8 13h2"/>
-            <path d="M8 17h2"/>
-            <path d="M14 13h2"/>
-            <path d="M14 17h2"/>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>
+            <path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/>
           </svg>
           <span class="hidden sm:inline">تصدير Excel</span>
         </button>
         <button id="btnDownloadAllZip" class="inline-flex items-center gap-1 px-3 py-2 rounded-md bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium transition disabled:opacity-50" title="تنزيل كل صور الأجهزة في ملف ZIP">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" x2="12" y1="15" y2="3"/>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
           </svg>
           <span class="hidden sm:inline">كل الصور ZIP</span>
         </button>
         <button id="btnReset" class="inline-flex items-center justify-center p-2 rounded-md border border-slate-300 hover:bg-slate-100 text-slate-600 transition" title="إعادة تعيين">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 6h18"/>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
         </button>
       </div>
@@ -153,7 +106,7 @@
   <main class="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-6 space-y-4 pb-24">
 
     <!-- Stats Header -->
-    <section id="statsHeader" class="rounded-xl border border-teal-200 bg-gradient-to-l from-teal-50 to-cyan-50 p-4 sm:p-6">
+    <section class="rounded-xl border border-teal-200 bg-gradient-to-l from-teal-50 to-cyan-50 p-4 sm:p-6">
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between flex-wrap gap-2">
           <div>
@@ -197,13 +150,9 @@
     <!-- Offline notice -->
     <section class="rounded-xl border border-teal-200 bg-teal-50/50 p-3 flex items-center gap-2">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600 shrink-0">
-        <path d="M12 8v4"/>
-        <path d="M14 14l-2-2"/>
-        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4"/><path d="M14 14l-2-2"/><circle cx="12" cy="12" r="10"/>
       </svg>
-      <p class="text-xs text-slate-600">
-        البيانات محفوظة محلياً على جهازك (IndexedDB). يمكن العمل بدون إنترنت لأيام أو أسابيع، ولن تُحذف عند إغلاق المتصفح.
-      </p>
+      <p class="text-xs text-slate-600">البيانات محفوظة محلياً على جهازك (IndexedDB). يمكن العمل بدون إنترنت لأيام أو أسابيع، ولن تُحذف عند إغلاق المتصفح.</p>
     </section>
 
     <!-- Filters -->
@@ -211,11 +160,9 @@
       <div class="flex flex-col sm:flex-row gap-2">
         <div class="relative flex-1">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="m21 21-4.3-4.3"/>
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
           </svg>
-          <input id="searchInput" type="text" placeholder="بحث برقم الجهاز، Asset، Serial، الموقع، الفاحص..."
-            class="w-full pr-8 pl-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm" />
+          <input id="searchInput" type="text" placeholder="بحث برقم الجهاز، Asset، Serial، الموقع، الفاحص..." class="w-full pr-8 pl-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm" />
         </div>
         <select id="statusFilter" class="w-full sm:w-48 px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm bg-white">
           <option value="all">كل الحالات</option>
@@ -228,14 +175,12 @@
 
     <!-- Laptop Grid -->
     <section id="laptopGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3">
-      <!-- Cards inserted by JS -->
       <div class="col-span-full text-center py-20 text-slate-500">
         <div class="animate-spin h-8 w-8 border-2 border-teal-600 border-t-transparent rounded-full mx-auto mb-3"></div>
         <p class="text-sm">جارٍ التحميل...</p>
       </div>
     </section>
 
-    <!-- Footer -->
     <footer class="mt-8 text-center text-[11px] text-slate-500 space-y-1">
       <p class="flex items-center justify-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -251,7 +196,6 @@
   <div id="detailSheet" class="fixed inset-0 z-40 hidden">
     <div class="sheet-overlay absolute inset-0 bg-black/40" data-close="1"></div>
     <div class="sheet-content absolute top-0 left-0 h-full w-full sm:max-w-2xl bg-white shadow-xl overflow-y-auto flex flex-col" style="transform: translateX(-100%)">
-      <!-- Header -->
       <div class="sticky top-0 bg-white border-b border-slate-200 p-4 z-10">
         <div class="flex items-center justify-between gap-2">
           <div>
@@ -264,17 +208,13 @@
           <div class="flex gap-1">
             <button id="btnDownloadPhotos" class="inline-flex items-center gap-1 px-2 py-1.5 rounded-md border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-medium transition">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="7 10 12 15 17 10"/>
-                <line x1="12" x2="12" y1="15" y2="3"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
               </svg>
               صور
             </button>
             <button id="btnSaveTop" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
               </svg>
               حفظ
             </button>
@@ -282,9 +222,7 @@
         </div>
       </div>
 
-      <!-- Body -->
       <div class="p-4 space-y-5 flex-1">
-
         <!-- معلومات الجهاز -->
         <section class="space-y-3">
           <h3 class="text-sm font-semibold flex items-center gap-1.5">
@@ -296,7 +234,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="space-y-1.5">
               <label class="text-xs font-medium">Laptop / Asset No. <span class="text-slate-500">(رقم الأصل)</span></label>
-              <input id="fAssetNo" type="text" placeholder="مثال: AST-001234" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm font-mono" dir="ltr" />
+              <input id="fAssetNo" type="text" placeholder="مثال: EX91X12345678" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm font-mono" dir="ltr" />
             </div>
             <div class="space-y-1.5">
               <label class="text-xs font-medium">Serial Number <span class="text-slate-500">(الرقم التسلسلي)</span></label>
@@ -311,7 +249,7 @@
               <input id="fDept" type="text" placeholder="المستخدم أو القسم" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm" />
             </div>
           </div>
-          <p class="text-[11px] text-slate-500">💡 صورة الـ Asset/Serial يمكن قراءتها تلقائياً عبر زر OCR بالأسفل.</p>
+          <p class="text-[11px] text-slate-500">💡 صورة الـ Asset/Serial يمكن قراءتها تلقائياً عبر زر OCR بالأسفل. النمط المتوقع: <code class="bg-slate-100 px-1 rounded">EX91X</code> + 8 أرقام.</p>
         </section>
 
         <hr class="border-slate-200" />
@@ -320,13 +258,10 @@
         <section class="space-y-3">
           <h3 class="text-sm font-semibold flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-600">
-              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/>
-              <line x1="12" x2="12" y1="9" y2="13"/>
-              <line x1="12" x2="12.01" y1="17" y2="17"/>
+              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/>
             </svg>
             تقييم الضرر
           </h3>
-
           <div class="space-y-1.5">
             <label class="text-xs font-medium">Damage Status</label>
             <select id="fStatus" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm bg-white">
@@ -335,7 +270,6 @@
               <option value="No Visible Damage">سليم — No Visible Damage</option>
             </select>
           </div>
-
           <div id="damageFields" class="grid grid-cols-1 sm:grid-cols-2 gap-3 hidden">
             <div class="space-y-1.5">
               <label class="text-xs font-medium">Damage Type</label>
@@ -386,7 +320,6 @@
               </select>
             </div>
           </div>
-
           <div class="space-y-1.5">
             <label class="text-xs font-medium">Damage Description <span class="text-slate-500">(وصف دقيق)</span></label>
             <textarea id="fDesc" rows="3" placeholder="مثال: Bottom cover cracked near left hinge. Multiple scratches on palm rest, no structural damage." class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm resize-none"></textarea>
@@ -400,11 +333,10 @@
         <section class="space-y-3">
           <h3 class="text-sm font-semibold flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600">
-              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>
             </svg>
             الأدلة المصورة
           </h3>
-
           <div id="ocrProgressBox" class="hidden rounded-lg border border-teal-200 bg-teal-50 p-3 space-y-2">
             <div class="flex items-center gap-2 text-sm">
               <div class="animate-spin h-4 w-4 border-2 border-teal-600 border-t-transparent rounded-full"></div>
@@ -413,32 +345,25 @@
             <div class="h-1.5 bg-teal-100 rounded-full overflow-hidden">
               <div id="ocrProgressBar" class="h-full bg-teal-600 transition-all" style="width:0%"></div>
             </div>
-            <p class="text-[11px] text-slate-500">أول قراءة قد تستغرق 10–20 ثانية لتحميل نموذج اللغة.</p>
+            <p class="text-[11px] text-slate-500">جارٍ تشغيل 3 محاولات OCR (أصلية + محسّنة + فلتر أحرف). قد تستغرق 60-90 ثانية.</p>
           </div>
-
           <div class="grid grid-cols-2 gap-2">
             <button id="btnCamera" class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-md border border-slate-300 hover:bg-slate-50 text-sm font-medium transition">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                <circle cx="12" cy="13" r="3"/>
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>
               </svg>
               تصوير
             </button>
             <button id="btnGallery" class="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-md border border-slate-300 hover:bg-slate-50 text-sm font-medium transition">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/>
-                <line x1="12" x2="12" y1="3" y2="15"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
               </svg>
               من المعرض
             </button>
           </div>
-
           <input id="cameraInput" type="file" accept="image/*" capture="environment" class="hidden" />
           <input id="galleryInput" type="file" accept="image/*" class="hidden" />
-
           <div id="photoGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-
           <div id="photoRefInfo" class="text-[11px] text-slate-500 hidden">
             مرجع الصور: <span id="photoRefText" class="font-mono"></span>
           </div>
@@ -450,8 +375,7 @@
         <section class="space-y-3">
           <h3 class="text-sm font-semibold flex items-center gap-1.5">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-teal-600">
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             الفاحص والتاريخ
           </h3>
@@ -465,7 +389,6 @@
               <input id="fDate" type="date" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm" />
             </div>
           </div>
-
           <div class="space-y-1.5">
             <label class="text-xs font-medium">Remarks <span class="text-slate-500">(ملاحظات إضافية)</span></label>
             <textarea id="fRemarks" rows="2" placeholder="أي ملاحظات إضافية للمدير أو الفريق" class="w-full px-3 py-2 rounded-md border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 outline-none text-sm resize-none"></textarea>
@@ -474,7 +397,6 @@
 
         <hr class="border-slate-200" />
 
-        <!-- Meta info -->
         <section class="text-[11px] text-slate-500 space-y-1">
           <div class="flex items-center justify-between">
             <span>Photo Reference:</span>
@@ -485,18 +407,14 @@
             <span id="metaUpdated" dir="ltr">—</span>
           </div>
         </section>
-
         <div class="h-16"></div>
       </div>
 
-      <!-- Sticky bottom save bar -->
       <div class="sticky bottom-0 bg-white/95 backdrop-blur border-t border-slate-200 p-3 flex gap-2 safe-bottom">
         <button id="btnClose" class="flex-1 px-4 py-2 rounded-md border border-slate-300 hover:bg-slate-100 text-sm font-medium transition">إغلاق</button>
         <button id="btnSaveBottom" class="flex-1 inline-flex items-center justify-center gap-1 px-4 py-2 rounded-md bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium transition">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-            <polyline points="17 21 17 13 7 13 7 21"/>
-            <polyline points="7 3 7 8 15 8"/>
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
           </svg>
           حفظ التغييرات
         </button>
@@ -507,10 +425,7 @@
   <!-- ========== Image Preview Modal ========== -->
   <div id="previewModal" class="fixed inset-0 z-50 hidden bg-black/80 items-center justify-center p-4">
     <button id="previewClose" class="absolute top-4 right-4 text-white bg-white/20 hover:bg-white/30 rounded-full p-2">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 6 6 18"/>
-        <path d="m6 6 12 12"/>
-      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
     </button>
     <img id="previewImg" alt="معاينة" class="max-w-full max-h-full object-contain" />
   </div>
@@ -532,47 +447,35 @@
 
   <script>
     // ============================================================
-    // Laptop Damage Inspection - Standalone Static App
+    // Laptop Damage Inspection - Final Static App
     // ============================================================
 
-    // ---------- Configuration ----------
     const TOTAL_LAPTOPS = 26;
     const DB_NAME = 'LaptopDamageInspectionDB';
-    const DB_VERSION = 1;
 
-    // ---------- Database Setup (Dexie) ----------
     const db = new Dexie(DB_NAME);
-    db.version(DB_VERSION).stores({
+    db.version(1).stores({
       laptops: '++id, &no, assetNo, serialNumber, damageStatus, inspector',
       photos: '++id, laptopId, photoType, [laptopId+photoType]',
     });
 
     // ---------- Helpers ----------
-    function makeLaptopCode(no) {
-      return 'LT-' + String(no).padStart(3, '0');
-    }
+    function makeLaptopCode(no) { return 'LT-' + String(no).padStart(3, '0'); }
 
     function emptyLaptop(no) {
       const now = new Date().toISOString();
       return {
-        no,
-        assetNo: '',
-        serialNumber: '',
-        currentLocation: '',
-        userDepartment: '',
-        damageStatus: 'Pending Inspection',
-        damageType: '',
-        damagedPart: '',
-        damageSeverity: 'N/A',
-        damageDescription: '',
-        inspector: '',
-        inspectionDate: '',
-        photoReference: '',
-        remarks: '',
-        actionRequired: 'None',
-        createdAt: now,
-        updatedAt: now,
+        no, assetNo:'', serialNumber:'', currentLocation:'', userDepartment:'',
+        damageStatus:'Pending Inspection', damageType:'', damagedPart:'',
+        damageSeverity:'N/A', damageDescription:'', inspector:'',
+        inspectionDate:'', photoReference:'', remarks:'',
+        actionRequired:'None', createdAt:now, updatedAt:now,
       };
+    }
+
+    function sanitizeAssetName(assetNo) {
+      if (!assetNo || !assetNo.trim()) return null;
+      return assetNo.trim().replace(/[^A-Za-z0-9\-_]/g, '_');
     }
 
     async function ensureInitialized() {
@@ -584,17 +487,14 @@
       }
     }
 
+    // ---------- Photo Reference Refresh (uses Asset No) ----------
     async function refreshPhotoReference(laptopId) {
       const laptop = await db.laptops.get(laptopId);
       if (!laptop) return;
       const photos = await db.photos.where('laptopId').equals(laptopId).toArray();
-      // Use Asset No. for naming if available, otherwise fall back to LT-XXX
-      const baseName = (laptop.assetNo && laptop.assetNo.trim())
-        ? laptop.assetNo.trim().replace(/[^A-Za-z0-9\-_]/g, '_')
-        : makeLaptopCode(laptop.no);
+      const baseName = sanitizeAssetName(laptop.assetNo) || makeLaptopCode(laptop.no);
       const ref = photos.map((_, idx) => `${baseName}_${idx + 1}`).join(', ');
       await db.laptops.update(laptopId, { photoReference: ref, updatedAt: new Date().toISOString() });
-      // Update photo.name to match new ordering
       for (let i = 0; i < photos.length; i++) {
         const newName = `${baseName}_${i + 1}`;
         if (photos[i].name !== newName) {
@@ -603,13 +503,7 @@
       }
     }
 
-    // Sanitize Asset No. for use as folder/file name
-    function sanitizeAssetName(assetNo) {
-      if (!assetNo || !assetNo.trim()) return null;
-      return assetNo.trim().replace(/[^A-Za-z0-9\-_]/g, '_');
-    }
-
-    // ---------- Toast Notifications ----------
+    // ---------- Toast ----------
     function toast(message, type = 'info', description = '') {
       const container = document.getElementById('toastContainer');
       const el = document.createElement('div');
@@ -626,7 +520,7 @@
         el.style.opacity = '0';
         el.style.transform = 'translateY(-10px)';
         setTimeout(() => el.remove(), 300);
-      }, 3500);
+      }, 4500);
     }
 
     function escapeHtml(s) {
@@ -640,7 +534,7 @@
     let currentPhotos = [];
     let ocrBusy = false;
 
-    // ---------- Render: Stats ----------
+    // ---------- Render Stats ----------
     function renderStats() {
       const total = allLaptops.length;
       const inspected = allLaptops.filter(l => l.damageStatus !== 'Pending Inspection').length;
@@ -648,15 +542,12 @@
       const clean = allLaptops.filter(l => l.damageStatus === 'No Visible Damage').length;
       const pending = total - inspected;
       const pct = total > 0 ? Math.round((inspected / total) * 100) : 0;
-
       document.getElementById('statsSubtitle').textContent = `تم فحص ${inspected} من أصل ${total} جهاز`;
       document.getElementById('statsPct').textContent = pct + '%';
       document.getElementById('statsBar').style.width = pct + '%';
       document.getElementById('statDamaged').textContent = damaged;
       document.getElementById('statClean').textContent = clean;
       document.getElementById('statPending').textContent = pending;
-
-      // Last update
       const lastSaved = allLaptops.map(l => l.updatedAt).filter(Boolean).sort().pop();
       const lastUpdateEl = document.getElementById('lastUpdate');
       if (inspected > 0 && lastSaved) {
@@ -667,12 +558,11 @@
       }
     }
 
-    // ---------- Render: Laptop Grid ----------
+    // ---------- Render Grid ----------
     function renderGrid() {
       const search = document.getElementById('searchInput').value.trim().toLowerCase();
       const statusFilter = document.getElementById('statusFilter').value;
       const grid = document.getElementById('laptopGrid');
-
       const filtered = allLaptops.filter(l => {
         if (statusFilter !== 'all' && l.damageStatus !== statusFilter) return false;
         if (!search) return true;
@@ -685,32 +575,28 @@
           (l.inspector || '').toLowerCase().includes(search)
         );
       });
-
       if (filtered.length === 0) {
         grid.innerHTML = '<div class="col-span-full text-center py-20 text-slate-500 text-sm">لا توجد نتائج مطابقة</div>';
         return;
       }
-
       grid.innerHTML = filtered.map(l => {
         const code = makeLaptopCode(l.no);
-        let statusStyle = '', statusText = 'بانتظار الفحص', statusColor = 'text-amber-600';
+        let statusStyle = '', statusText = 'بانتظار الفحص', statusColor = 'text-amber-600', dotColor = 'bg-amber-500';
         if (l.damageStatus === 'Damaged') {
-          statusStyle = 'border-red-300 bg-red-50';
-          statusText = 'متضرر';
-          statusColor = 'text-red-600';
+          statusStyle = 'border-red-300 bg-red-50'; statusText = 'متضرر'; statusColor = 'text-red-600'; dotColor = 'bg-red-500';
         } else if (l.damageStatus === 'No Visible Damage') {
-          statusStyle = 'border-green-300 bg-green-50';
-          statusText = 'سليم';
-          statusColor = 'text-green-600';
+          statusStyle = 'border-green-300 bg-green-50'; statusText = 'سليم'; statusColor = 'text-green-600'; dotColor = 'bg-green-500';
         } else {
           statusStyle = 'border-amber-200 bg-amber-50';
         }
-
         const hasData = l.assetNo || l.serialNumber || l.damageDescription || l.inspector;
         const damagedInfo = (l.damagedPart && l.damageStatus === 'Damaged')
-          ? `<div class="mt-1.5 text-xs text-slate-500 line-clamp-1">${l.damagedPart}${l.damageSeverity !== 'N/A' ? ' • ' + l.damageSeverity : ''}</div>`
+          ? `<div class="mt-1.5 text-xs text-slate-500 line-clamp-1">${escapeHtml(l.damagedPart)}${l.damageSeverity !== 'N/A' ? ' • ' + escapeHtml(l.damageSeverity) : ''}</div>`
           : '';
-
+        const assetDisplay = l.assetNo ? escapeHtml(l.assetNo) : 'بدون Asset';
+        const photoBadge = l._photoCount > 0
+          ? `<span class="shrink-0 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 rounded"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>${l._photoCount}</span>`
+          : '';
         return `
           <div role="button" tabindex="0" data-id="${l.id}" class="laptop-card cursor-pointer rounded-lg border p-3 transition-all hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-teal-500 ${statusStyle}">
             <div class="flex items-start justify-between gap-2 mb-2">
@@ -718,18 +604,13 @@
                 <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-600 text-white font-bold text-sm shrink-0">${l.no}</div>
                 <div class="min-w-0">
                   <div class="font-mono text-xs text-slate-500">${code}</div>
-                  <div class="text-sm font-semibold truncate">${l.assetNo || 'بدون Asset'}</div>
+                  <div class="text-sm font-semibold truncate">${assetDisplay}</div>
                 </div>
               </div>
-              ${l._photoCount > 0 ? `<span class="shrink-0 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 bg-slate-100 rounded">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-                  <circle cx="12" cy="13" r="3"/>
-                </svg>${l._photoCount}
-              </span>` : ''}
+              ${photoBadge}
             </div>
             <div class="flex items-center gap-1.5 text-xs">
-              <span class="inline-block h-2 w-2 rounded-full ${l.damageStatus === 'Damaged' ? 'bg-red-500' : l.damageStatus === 'No Visible Damage' ? 'bg-green-500' : 'bg-amber-500'}"></span>
+              <span class="inline-block h-2 w-2 rounded-full ${dotColor}"></span>
               <span class="font-medium ${statusColor}">${statusText}</span>
             </div>
             ${damagedInfo}
@@ -737,15 +618,10 @@
           </div>
         `;
       }).join('');
-
-      // Attach click handlers
       grid.querySelectorAll('.laptop-card').forEach(card => {
         card.addEventListener('click', () => openDetail(parseInt(card.dataset.id)));
         card.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openDetail(parseInt(card.dataset.id));
-          }
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(parseInt(card.dataset.id)); }
         });
       });
     }
@@ -755,14 +631,11 @@
       try {
         await ensureInitialized();
         allLaptops = await db.laptops.orderBy('no').toArray();
-        // Load photo counts
         for (const l of allLaptops) {
           if (l.id) {
             const count = await db.photos.where('laptopId').equals(l.id).count();
             l._photoCount = count;
-          } else {
-            l._photoCount = 0;
-          }
+          } else { l._photoCount = 0; }
         }
         renderStats();
         renderGrid();
@@ -777,14 +650,11 @@
       const laptop = allLaptops.find(l => l.id === id);
       if (!laptop) return;
       currentLaptop = laptop;
-      // Track the Asset No. at open time so we can detect changes on save
       currentLaptop._lastKnownAsset = laptop.assetNo || '';
       currentPhotos = await db.photos.where('laptopId').equals(id).toArray();
-
       document.getElementById('detailNo').textContent = laptop.no;
       document.getElementById('detailCode').textContent = makeLaptopCode(laptop.no);
       document.getElementById('detailSubtitle').textContent = `رقم الجهاز في السجل: ${laptop.no} / ${TOTAL_LAPTOPS}`;
-
       document.getElementById('fAssetNo').value = laptop.assetNo || '';
       document.getElementById('fSerial').value = laptop.serialNumber || '';
       document.getElementById('fLocation').value = laptop.currentLocation || '';
@@ -799,17 +669,11 @@
       document.getElementById('fRemarks').value = laptop.remarks || '';
       document.getElementById('metaPhotoRef').textContent = laptop.photoReference || '—';
       document.getElementById('metaUpdated').textContent = laptop.updatedAt ? new Date(laptop.updatedAt).toLocaleString('en-GB') : '—';
-
       if (laptop.inspectionDate) {
         document.getElementById('fDate').value = new Date(laptop.inspectionDate).toISOString().slice(0, 10);
-      } else {
-        document.getElementById('fDate').value = '';
-      }
-
+      } else { document.getElementById('fDate').value = ''; }
       toggleDamageFields();
       renderPhotoGrid();
-
-      // Show sheet
       const sheet = document.getElementById('detailSheet');
       sheet.classList.remove('hidden');
       requestAnimationFrame(() => {
@@ -831,17 +695,13 @@
     function toggleDamageFields() {
       const status = document.getElementById('fStatus').value;
       const fields = document.getElementById('damageFields');
-      if (status === 'Damaged') {
-        fields.classList.remove('hidden');
-      } else {
-        fields.classList.add('hidden');
-      }
+      if (status === 'Damaged') fields.classList.remove('hidden');
+      else fields.classList.add('hidden');
     }
 
-    // ---------- Save ----------
-    async function saveLaptop(autoStatusUpdate = false) {
+    // ---------- Save (with photo rename on Asset change) ----------
+    async function saveLaptop() {
       if (!currentLaptop?.id) return;
-
       const patch = {
         assetNo: document.getElementById('fAssetNo').value.trim(),
         serialNumber: document.getElementById('fSerial').value.trim(),
@@ -857,8 +717,6 @@
         actionRequired: document.getElementById('fAction').value,
         updatedAt: new Date().toISOString(),
       };
-
-      // Handle inspection date
       const dateStr = document.getElementById('fDate').value;
       if (dateStr) {
         patch.inspectionDate = new Date(dateStr).toISOString();
@@ -868,45 +726,37 @@
       } else if (patch.damageStatus === 'Pending Inspection') {
         patch.inspectionDate = '';
       }
-
       try {
         await db.laptops.update(currentLaptop.id, patch);
-        // Update local state
         Object.assign(currentLaptop, patch);
         const idx = allLaptops.findIndex(l => l.id === currentLaptop.id);
         if (idx >= 0) allLaptops[idx] = { ...allLaptops[idx], ...patch };
 
         // If Asset No. changed, refresh photo references so photo names update
-        // from LT-XXX_N to {assetNo}_N
         const oldAsset = currentLaptop._lastKnownAsset || '';
         if (patch.assetNo !== oldAsset) {
           await refreshPhotoReference(currentLaptop.id);
           currentLaptop._lastKnownAsset = patch.assetNo;
-          // Reload photos to reflect new names in UI
           currentPhotos = await db.photos.where('laptopId').equals(currentLaptop.id).toArray();
           renderPhotoGrid();
         }
-
-        // Update meta info
         const updatedLaptop = await db.laptops.get(currentLaptop.id);
         if (updatedLaptop) {
           document.getElementById('metaPhotoRef').textContent = updatedLaptop.photoReference || '—';
         }
         document.getElementById('metaUpdated').textContent = new Date(patch.updatedAt).toLocaleString('en-GB');
-
         renderStats();
         renderGrid();
-        if (!autoStatusUpdate) toast('تم الحفظ', 'success');
+        toast('تم الحفظ', 'success');
       } catch (err) {
         console.error(err);
         toast('فشل الحفظ', 'error');
       }
     }
 
-    // ---------- Status change handler (auto-save) ----------
+    // ---------- Status change (auto-save) ----------
     async function handleStatusChange() {
       toggleDamageFields();
-      // Auto-save status change
       if (!currentLaptop?.id) return;
       const newStatus = document.getElementById('fStatus').value;
       const newDate = (newStatus !== 'Pending Inspection' && !currentLaptop.inspectionDate)
@@ -945,8 +795,7 @@
           const w = Math.round(img.width * scale);
           const h = Math.round(img.height * scale);
           const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
+          canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
           if (!ctx) { resolve(file); return; }
           ctx.drawImage(img, 0, 0, w, h);
@@ -972,11 +821,14 @@
         await refreshPhotoReference(currentLaptop.id);
         currentPhotos = await db.photos.where('laptopId').equals(currentLaptop.id).toArray();
         renderPhotoGrid();
-        // Update count in allLaptops
         currentLaptop._photoCount = currentPhotos.length;
         const idx = allLaptops.findIndex(l => l.id === currentLaptop.id);
         if (idx >= 0) allLaptops[idx]._photoCount = currentPhotos.length;
         renderGrid();
+        const updatedLaptop = await db.laptops.get(currentLaptop.id);
+        if (updatedLaptop) {
+          document.getElementById('metaPhotoRef').textContent = updatedLaptop.photoReference || '—';
+        }
         toast('تمت إضافة الصورة', 'success');
       } catch (err) {
         console.error(err);
@@ -987,26 +839,20 @@
     function renderPhotoGrid() {
       const grid = document.getElementById('photoGrid');
       const refInfo = document.getElementById('photoRefInfo');
-
       if (currentPhotos.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full rounded-lg border border-dashed border-slate-300 p-6 text-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-2 text-slate-300">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="9" cy="9" r="2"/>
-              <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
             </svg>
             <p class="text-xs text-slate-500">لا توجد صور بعد</p>
-          </div>
-        `;
+          </div>`;
         refInfo.classList.add('hidden');
         return;
       }
-
       refInfo.classList.remove('hidden');
       document.getElementById('photoRefText').textContent = currentLaptop.photoReference || '—';
-
-      grid.innerHTML = currentPhotos.map((p, idx) => {
+      grid.innerHTML = currentPhotos.map((p) => {
         const url = URL.createObjectURL(p.blob);
         return `
           <div class="relative rounded-lg overflow-hidden border bg-slate-100 aspect-square" data-photo-id="${p.id}">
@@ -1014,29 +860,22 @@
             <div class="absolute top-1 left-1 right-1 flex items-center justify-between">
               <span class="bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">${escapeHtml(p.name)}</span>
               <button class="delete-photo bg-black/60 hover:bg-red-600 text-white rounded p-1" data-photo-id="${p.id}" title="حذف">
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
               </button>
             </div>
             <div class="absolute bottom-1 left-1 right-1 flex gap-1">
               <button class="ocr-btn flex-1 h-7 text-[10px] bg-white/90 hover:bg-white rounded" data-target="assetNo">OCR Asset</button>
               <button class="ocr-btn flex-1 h-7 text-[10px] bg-white/90 hover:bg-white rounded" data-target="serialNumber">OCR Serial</button>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
-
-      // Attach handlers
       grid.querySelectorAll('.preview-trigger').forEach(img => {
         img.addEventListener('click', (e) => {
-          const url = e.target.src;
-          document.getElementById('previewImg').src = url;
-          document.getElementById('previewModal').classList.remove('hidden');
-          document.getElementById('previewModal').classList.add('flex');
+          document.getElementById('previewImg').src = e.target.src;
+          const m = document.getElementById('previewModal');
+          m.classList.remove('hidden'); m.classList.add('flex');
         });
       });
-
       grid.querySelectorAll('.delete-photo').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
@@ -1049,10 +888,11 @@
           if (idx >= 0) allLaptops[idx]._photoCount = currentPhotos.length;
           renderPhotoGrid();
           renderGrid();
+          const updatedLaptop = await db.laptops.get(currentLaptop.id);
+          if (updatedLaptop) document.getElementById('metaPhotoRef').textContent = updatedLaptop.photoReference || '—';
           toast('تم حذف الصورة', 'success');
         });
       });
-
       grid.querySelectorAll('.ocr-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           e.stopPropagation();
@@ -1066,46 +906,35 @@
       });
     }
 
-    // ---------- OCR ----------
     // ---------- Image Preprocessing for OCR ----------
-    // Convert to grayscale, increase contrast, and binarize to improve OCR accuracy
-    // on real-world asset tag photos (glare, low contrast, small text).
     async function preprocessImageForOcr(blob, scale = 2) {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
-          // Upscale small images so Tesseract has more pixels to work with
           const w = Math.round(img.width * scale);
           const h = Math.round(img.height * scale);
           const canvas = document.createElement('canvas');
-          canvas.width = w;
-          canvas.height = h;
+          canvas.width = w; canvas.height = h;
           const ctx = canvas.getContext('2d');
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, w, h);
           URL.revokeObjectURL(img.src);
-
           try {
             const imageData = ctx.getImageData(0, 0, w, h);
             const data = imageData.data;
-
-            // Pass 1: Grayscale + contrast enhancement
+            // Grayscale + contrast
             const contrast = 1.6;
             const intercept = 128 * (1 - contrast);
             for (let i = 0; i < data.length; i += 4) {
               const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-              let adjusted = gray * contrast + intercept;
-              if (adjusted < 0) adjusted = 0;
-              if (adjusted > 255) adjusted = 255;
-              data[i] = data[i + 1] = data[i + 2] = adjusted;
+              let v = gray * contrast + intercept;
+              if (v < 0) v = 0; if (v > 255) v = 255;
+              data[i] = data[i + 1] = data[i + 2] = v;
             }
-
-            // Pass 2: Compute histogram for Otsu's threshold (binarization)
+            // Otsu threshold
             const hist = new Array(256).fill(0);
-            for (let i = 0; i < data.length; i += 4) {
-              hist[data[i]]++;
-            }
+            for (let i = 0; i < data.length; i += 4) hist[data[i]]++;
             const total = w * h;
             let sum = 0;
             for (let t = 0; t < 256; t++) sum += t * hist[t];
@@ -1119,22 +948,15 @@
               const mB = sumB / wB;
               const mF = (sum - sumB) / wF;
               const between = wB * wF * (mB - mF) * (mB - mF);
-              if (between > varMax) {
-                varMax = between;
-                threshold = t;
-              }
+              if (between > varMax) { varMax = between; threshold = t; }
             }
-
-            // Pass 3: Binarize using Otsu threshold
+            // Binarize
             for (let i = 0; i < data.length; i += 4) {
               const v = data[i] > threshold ? 255 : 0;
               data[i] = data[i + 1] = data[i + 2] = v;
             }
-
             ctx.putImageData(imageData, 0, 0);
-            canvas.toBlob((outBlob) => {
-              resolve(outBlob || blob);
-            }, 'image/png');
+            canvas.toBlob((outBlob) => resolve(outBlob || blob), 'image/png');
           } catch (e) {
             console.warn('preprocess failed', e);
             resolve(blob);
@@ -1145,7 +967,7 @@
       });
     }
 
-    // ---------- OCR with multiple passes ----------
+    // ---------- OCR with 3 passes ----------
     async function runOcr(blob, target) {
       if (ocrBusy) return;
       ocrBusy = true;
@@ -1155,86 +977,50 @@
       box.classList.remove('hidden');
       bar.style.width = '0%';
       text.textContent = 'جارٍ تحسين الصورة...';
-
       try {
-        // === Step 1: Preprocess image (upscale 2x + grayscale + contrast + binarize) ===
         const processedBlob = await preprocessImageForOcr(blob, 2);
-
-        // === Step 2: Run multiple OCR passes with different settings ===
         const allTexts = [];
-
-        // Pass A: Original image, default settings (catches everything)
+        // Pass A: original
         text.textContent = 'محاولة 1 من 3: الصورة الأصلية...';
         bar.style.width = '10%';
         try {
           const r1 = await Tesseract.recognize(blob, 'eng', {
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                const pct = 10 + Math.round(m.progress * 25);
-                bar.style.width = pct + '%';
-                text.textContent = `محاولة 1 من 3: ${Math.round(m.progress * 100)}%`;
-              }
-            }
+            logger: m => { if (m.status === 'recognizing text') { const p = 10 + Math.round(m.progress * 25); bar.style.width = p + '%'; text.textContent = `محاولة 1 من 3: ${Math.round(m.progress*100)}%`; } }
           });
-          allTexts.push({ label: 'original-default', text: r1.data.text });
-        } catch (e) { console.warn('OCR pass A failed', e); }
-
-        // Pass B: Preprocessed image, default settings (better for low-contrast)
+          allTexts.push(r1.data.text);
+        } catch (e) { console.warn('pass A', e); }
+        // Pass B: preprocessed
         text.textContent = 'محاولة 2 من 3: الصورة المحسّنة...';
         bar.style.width = '40%';
         try {
           const r2 = await Tesseract.recognize(processedBlob, 'eng', {
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                const pct = 40 + Math.round(m.progress * 25);
-                bar.style.width = pct + '%';
-                text.textContent = `محاولة 2 من 3: ${Math.round(m.progress * 100)}%`;
-              }
-            }
+            logger: m => { if (m.status === 'recognizing text') { const p = 40 + Math.round(m.progress * 25); bar.style.width = p + '%'; text.textContent = `محاولة 2 من 3: ${Math.round(m.progress*100)}%`; } }
           });
-          allTexts.push({ label: 'preprocessed-default', text: r2.data.text });
-        } catch (e) { console.warn('OCR pass B failed', e); }
-
-        // Pass C: Preprocessed image with character whitelist
-        // For Asset: only E, X, digits. For Serial: alphanumeric.
+          allTexts.push(r2.data.text);
+        } catch (e) { console.warn('pass B', e); }
+        // Pass C: preprocessed + whitelist
         text.textContent = 'محاولة 3 من 3: مع فلتر الأحرف...';
         bar.style.width = '70%';
         try {
-          const whitelist = target === 'assetNo'
-            ? 'EX0123456789'
-            : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          const whitelist = target === 'assetNo' ? 'EX0123456789' : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
           const r3 = await Tesseract.recognize(processedBlob, 'eng', {
             tessedit_char_whitelist: whitelist,
-            tessedit_pageseg_mode: '6', // Assume a single uniform block of text
-            logger: m => {
-              if (m.status === 'recognizing text') {
-                const pct = 70 + Math.round(m.progress * 25);
-                bar.style.width = pct + '%';
-                text.textContent = `محاولة 3 من 3: ${Math.round(m.progress * 100)}%`;
-              }
-            }
+            tessedit_pageseg_mode: '6',
+            logger: m => { if (m.status === 'recognizing text') { const p = 70 + Math.round(m.progress * 25); bar.style.width = p + '%'; text.textContent = `محاولة 3 من 3: ${Math.round(m.progress*100)}%`; } }
           });
-          allTexts.push({ label: 'preprocessed-whitelist', text: r3.data.text });
-        } catch (e) { console.warn('OCR pass C failed', e); }
-
+          allTexts.push(r3.data.text);
+        } catch (e) { console.warn('pass C', e); }
         bar.style.width = '100%';
         text.textContent = 'جارٍ تحليل النتائج...';
-
-        // === Step 3: Extract ID from all collected texts ===
-        const combinedRaw = allTexts.map(t => t.text).join('\n\n---\n\n');
+        const combinedRaw = allTexts.join('\n\n---\n\n');
         const id = extractLikelyId(combinedRaw, target);
-
         if (id) {
-          if (target === 'assetNo') {
-            document.getElementById('fAssetNo').value = id;
-          } else {
-            document.getElementById('fSerial').value = id;
-          }
-          toast(`تم التعرف على: ${id}`, 'success', 'راجع النص قبل الحفظ');
+          if (target === 'assetNo') document.getElementById('fAssetNo').value = id;
+          else document.getElementById('fSerial').value = id;
+          toast(`تم التعرف على: ${id}`, 'success', 'راجع النص قبل الحفظ ثم اضغط حفظ');
         } else {
-          // Show raw text so user can manually copy the correct number
-          const preview = combinedRaw.replace(/\n+/g, ' ').slice(0, 120) || 'النص فارغ';
-          toast('لم أتعرف على رقم تلقائياً', 'warning', 'اقرأ النص واكتب الرقم يدوياً: ' + preview);
+          const preview = combinedRaw.replace(/\n+/g, ' ').slice(0, 150) || 'النص فارغ';
+          toast('لم أتعرف على رقم تلقائياً', 'warning', 'راجع النص واكتب الرقم يدوياً: ' + preview);
         }
       } catch (err) {
         console.error(err);
@@ -1248,98 +1034,57 @@
     // ---------- Smart ID Extraction ----------
     function extractLikelyId(rawText, target) {
       if (!rawText) return '';
-
-      // ===== Preprocessing =====
-      // Collapse spaces between alphanumeric chars on each line.
-      // "E X 9 1 X 1 2 3 4 5 6 7 8" -> "EX91X12345678"
-      const lines = rawText.split(/\n/).map(line => {
-        return line.replace(/([A-Za-z0-9])\s+(?=[A-Za-z0-9])/g, '$1').trim();
-      });
+      // Collapse spaces between alphanumeric chars
+      const lines = rawText.split(/\n/).map(line =>
+        line.replace(/([A-Za-z0-9])\s+(?=[A-Za-z0-9])/g, '$1').trim()
+      );
       const joined = lines.join('\n');
 
-      // ===== Asset No: pattern EX91X + 6-8 digits =====
       if (target === 'assetNo') {
-        // Try strict pattern first: EX + 2 digits + X + 6-8 digits
-        const strictMatch = joined.match(/EX\d{2}X\d{6,8}/i);
-        if (strictMatch) return strictMatch[0].toUpperCase();
-
-        // Looser: EX + 2-3 digits + optional X + 6-8 digits
-        const looseMatch = joined.match(/EX\d{2,3}X?\d{6,8}/i);
-        if (looseMatch) return looseMatch[0].toUpperCase();
-
-        // === Fuzzy matching with OCR error correction ===
-        // Common OCR confusions: 0↔O, 1↔I/L, 5↔S, 8↔B, 6↔G, 2↔Z
-        // Try to find tokens that are close to the EX91X pattern and fix them.
-        const candidates = joined.match(/[A-Z0-9OILSBGZilox]{8,16}/gi) || [];
+        // Strict: EX + 2 digits + X + 6-8 digits
+        const strict = joined.match(/EX\d{2}X\d{6,8}/i);
+        if (strict) return strict[0].toUpperCase();
+        // Loose: EX + 2-3 digits + optional X + 6-8 digits
+        const loose = joined.match(/EX\d{2,3}X?\d{6,8}/i);
+        if (loose) return loose[0].toUpperCase();
+        // Fuzzy: try OCR error correction on tokens
+        const candidates = joined.match(/[A-Z0-9OILSBGZiloxQD]{8,16}/gi) || [];
         for (const cand of candidates) {
-          const upper = cand.toUpperCase();
-          // Normalize common OCR errors (only for pattern-matching purposes)
-          const normalized = upper
-            .replace(/[OoQqD]/g, '0')
-            .replace(/[IiLl|]/g, '1')
-            .replace(/[Ss]/g, '5')
-            .replace(/[Bb]/g, '8')
-            .replace(/[Gg]/g, '6')
-            .replace(/[Zz]/g, '2');
-
+          const normalized = cand.toUpperCase()
+            .replace(/[OQD]/g, '0').replace(/[IL|]/g, '1').replace(/S/g, '5')
+            .replace(/B/g, '8').replace(/G/g, '6').replace(/Z/g, '2');
           const m = normalized.match(/EX\d{2}X\d{6,8}/);
-          if (m) {
-            // Return the normalized version (this is what the asset should be)
-            return m[0];
-          }
+          if (m) return m[0];
         }
-
-        // Try labelled extraction (Asset No: ...)
+        // Labelled
         const labelled = joined.match(/asset\s*(?:no|tag|number|#)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\-]{3,})/i);
         if (labelled?.[1]) {
           const v = labelled[1].toUpperCase();
-          // Normalize labelled value too
-          const vNorm = v
-            .replace(/[OQD]/g, '0')
-            .replace(/[IL|]/g, '1')
-            .replace(/S/g, '5')
-            .replace(/B/g, '8')
-            .replace(/G/g, '6')
-            .replace(/Z/g, '2');
+          const vNorm = v.replace(/[OQD]/g,'0').replace(/[IL|]/g,'1').replace(/S/g,'5').replace(/B/g,'8').replace(/G/g,'6').replace(/Z/g,'2');
           const m = vNorm.match(/EX\d{2}X\d{6,8}/);
           if (m) return m[0];
-          // If labelled value is long enough, return as-is
           if (v.length >= 6) return v;
         }
       }
 
-      // ===== Serial Number: usually 7-12 alphanumeric chars =====
       if (target === 'serialNumber') {
-        // Try labelled extraction first
         const labelled = joined.match(/(?:serial|s\/?n)\s*(?:no|number|#)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\-]{3,})/i);
         if (labelled?.[1]) return labelled[1].toUpperCase();
-
-        // Common Serial patterns:
-        // - 10-char alphanumeric (e.g. 5CG1234XYZ)
-        // - 7-char (e.g. CND1234)
         const serialMatch = joined.match(/\b([A-Z]{2,4}\d{6,8})\b/i) || joined.match(/\b(\d{10,12})\b/);
         if (serialMatch?.[1]) return serialMatch[1].toUpperCase();
       }
 
-      // ===== Fallback: tokenize and pick best alphanumeric token =====
+      // Fallback
       const cleaned = joined
         .replace(/serial\s*(no|number)?\s*[:#]?\s*/gi, ' ')
         .replace(/asset\s*(no|tag|number)?\s*[:#]?\s*/gi, ' ')
-        .replace(/s\/n\s*[:#]?\s*/gi, ' ')
-        .replace(/a\/n\s*[:#]?\s*/gi, ' ')
-        .replace(/p\/n\s*[:#]?\s*/gi, ' ');
+        .replace(/s\/n\s*[:#]?\s*/gi, ' ').replace(/a\/n\s*[:#]?\s*/gi, ' ').replace(/p\/n\s*[:#]?\s*/gi, ' ');
       const tokens = cleaned.split(/[^A-Za-z0-9\-]+/).filter(Boolean);
       let best = '', bestScore = -1;
       for (const tok of tokens) {
         if (tok.length < 3) continue;
-        // Normalize for scoring
         const normalized = tok.toUpperCase()
-          .replace(/[OQD]/g, '0')
-          .replace(/[IL|]/g, '1')
-          .replace(/S/g, '5')
-          .replace(/B/g, '8')
-          .replace(/G/g, '6')
-          .replace(/Z/g, '2');
+          .replace(/[OQD]/g,'0').replace(/[IL|]/g,'1').replace(/S/g,'5').replace(/B/g,'8').replace(/G/g,'6').replace(/Z/g,'2');
         const hasDigit = /\d/.test(normalized);
         const hasLetter = /[A-Z]/.test(normalized);
         let score = tok.length;
@@ -1347,7 +1092,6 @@
         if (hasLetter) score += 2;
         if (hasDigit && hasLetter) score += 3;
         if (tok.length >= 5 && tok.length <= 20) score += 2;
-        // Strongly boost tokens that match the EX91X pattern after normalization
         if (/EX\d{2}X\d{6,8}/.test(normalized)) score += 50;
         if (score > bestScore) {
           bestScore = score;
@@ -1371,18 +1115,13 @@
         l.inspectionDate ? new Date(l.inspectionDate).toLocaleDateString('en-GB') : '',
         l.photoReference, l.remarks, l.actionRequired
       ])];
-
       const ws = XLSX.utils.aoa_to_sheet(data);
       ws['!cols'] = [
-        { wch: 5 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
-        { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 12 }, { wch: 50 },
-        { wch: 18 }, { wch: 14 }, { wch: 30 }, { wch: 30 }, { wch: 14 }
+        {wch:5},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18},{wch:16},{wch:16},{wch:12},{wch:50},
+        {wch:18},{wch:14},{wch:30},{wch:30},{wch:14}
       ];
-
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Damage Inspection');
-
-      // Summary sheet
       const inspected = allLaptops.filter(l => l.damageStatus !== 'Pending Inspection').length;
       const summary = [
         ['Laptop Damage Inspection Report'],
@@ -1394,9 +1133,8 @@
         ['No Visible Damage', allLaptops.filter(l => l.damageStatus === 'No Visible Damage').length]
       ];
       const summaryWs = XLSX.utils.aoa_to_sheet(summary);
-      summaryWs['!cols'] = [{ wch: 22 }, { wch: 30 }];
+      summaryWs['!cols'] = [{wch:22},{wch:30}];
       XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
-
       const buf = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
       const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const d = new Date();
@@ -1404,23 +1142,16 @@
       const filename = `Laptop_Damage_Inspection_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.xlsx`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       toast('تم تصدير التقرير', 'success', `${allLaptops.length} جهاز في الملف`);
     }
 
-    // ---------- Download All Photos (per laptop) ----------
+    // ---------- Download Photos (single laptop) ----------
     async function downloadAllPhotos() {
       if (!currentLaptop) return;
-      if (currentPhotos.length === 0) {
-        toast('لا توجد صور للتنزيل', 'warning');
-        return;
-      }
-      // Use Asset No. if available, otherwise LT-XXX
+      if (currentPhotos.length === 0) { toast('لا توجد صور للتنزيل', 'warning'); return; }
       const baseName = sanitizeAssetName(currentLaptop.assetNo) || makeLaptopCode(currentLaptop.no);
       for (let i = 0; i < currentPhotos.length; i++) {
         const photo = currentPhotos[i];
@@ -1428,38 +1159,29 @@
         const filename = `${baseName}_${i + 1}.${ext}`;
         const url = URL.createObjectURL(photo.blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         await new Promise(r => setTimeout(r, 200));
         URL.revokeObjectURL(url);
       }
       toast(`تم تنزيل ${currentPhotos.length} صورة`, 'success');
     }
 
-    // ---------- Download ALL Photos as ZIP (all laptops) ----------
+    // ---------- Download ALL Photos as ZIP ----------
     async function downloadAllPhotosAsZip() {
       const btn = document.getElementById('btnDownloadAllZip');
       const originalHtml = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div><span class="hidden sm:inline">جارٍ التجهيز...</span>';
-
       try {
-        // Get all laptops with photos
         const laptops = await db.laptops.orderBy('no').toArray();
         const zip = new JSZip();
         let totalPhotos = 0;
         const usedFolderNames = new Set();
-
         for (const laptop of laptops) {
           const photos = await db.photos.where('laptopId').equals(laptop.id).toArray();
           if (photos.length === 0) continue;
-
-          // Folder name: Asset No if available, otherwise LT-XXX
           let folderName = sanitizeAssetName(laptop.assetNo) || makeLaptopCode(laptop.no);
-          // Avoid folder name collisions
           let uniqueFolder = folderName;
           let suffix = 2;
           while (usedFolderNames.has(uniqueFolder.toLowerCase())) {
@@ -1467,7 +1189,6 @@
             suffix++;
           }
           usedFolderNames.add(uniqueFolder.toLowerCase());
-
           for (let i = 0; i < photos.length; i++) {
             const photo = photos[i];
             const ext = (photo.blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
@@ -1477,44 +1198,31 @@
             totalPhotos++;
           }
         }
-
         if (totalPhotos === 0) {
           toast('لا توجد صور لتنزيلها', 'warning');
-          btn.disabled = false;
-          btn.innerHTML = originalHtml;
+          btn.disabled = false; btn.innerHTML = originalHtml;
           return;
         }
-
-        // Generate ZIP
         const zipBlob = await zip.generateAsync({
-          type: 'blob',
-          compression: 'DEFLATE',
-          compressionOptions: { level: 6 }
+          type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 }
         }, (metadata) => {
           const pct = Math.round(metadata.percent);
           btn.innerHTML = `<div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div><span class="hidden sm:inline">جارٍ الضغط ${pct}%</span>`;
         });
-
-        // Download
         const d = new Date();
         const pad = n => String(n).padStart(2, '0');
         const filename = `Laptop_Photos_${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.zip`;
         const url = URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-
         toast('تم إنشاء ملف ZIP', 'success', `${totalPhotos} صورة من ${usedFolderNames.size} جهاز`);
       } catch (err) {
         console.error(err);
         toast('فشل إنشاء ملف ZIP', 'error', err.message || '');
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalHtml;
+        btn.disabled = false; btn.innerHTML = originalHtml;
       }
     }
 
@@ -1524,8 +1232,8 @@
       await db.laptops.clear();
       await ensureInitialized();
       await loadAll();
-      document.getElementById('resetModal').classList.add('hidden');
-      document.getElementById('resetModal').classList.remove('flex');
+      const m = document.getElementById('resetModal');
+      m.classList.add('hidden'); m.classList.remove('flex');
       toast('تم حذف كل البيانات وإعادة التهيئة', 'success');
     }
 
@@ -1533,30 +1241,25 @@
     document.getElementById('searchInput').addEventListener('input', renderGrid);
     document.getElementById('statusFilter').addEventListener('change', renderGrid);
     document.getElementById('fStatus').addEventListener('change', handleStatusChange);
-
     document.getElementById('btnExport').addEventListener('click', exportExcel);
     document.getElementById('btnDownloadAllZip').addEventListener('click', downloadAllPhotosAsZip);
-
     document.getElementById('btnReset').addEventListener('click', () => {
-      document.getElementById('resetModal').classList.remove('hidden');
-      document.getElementById('resetModal').classList.add('flex');
+      const m = document.getElementById('resetModal');
+      m.classList.remove('hidden'); m.classList.add('flex');
     });
     document.getElementById('resetCancel').addEventListener('click', () => {
-      document.getElementById('resetModal').classList.add('hidden');
-      document.getElementById('resetModal').classList.remove('flex');
+      const m = document.getElementById('resetModal');
+      m.classList.add('hidden'); m.classList.remove('flex');
     });
     document.getElementById('resetConfirm').addEventListener('click', resetAll);
-
-    document.getElementById('btnSaveTop').addEventListener('click', () => saveLaptop(false));
-    document.getElementById('btnSaveBottom').addEventListener('click', () => saveLaptop(false));
+    document.getElementById('btnSaveTop').addEventListener('click', saveLaptop);
+    document.getElementById('btnSaveBottom').addEventListener('click', saveLaptop);
     document.getElementById('btnClose').addEventListener('click', closeDetail);
     document.getElementById('detailSheet').addEventListener('click', (e) => {
       if (e.target.dataset.close === '1') closeDetail();
     });
-
     document.getElementById('btnCamera').addEventListener('click', () => document.getElementById('cameraInput').click());
     document.getElementById('btnGallery').addEventListener('click', () => document.getElementById('galleryInput').click());
-
     document.getElementById('cameraInput').addEventListener('change', (e) => {
       const file = e.target.files?.[0];
       if (file) handleFileSelected(file);
@@ -1567,32 +1270,28 @@
       if (file) handleFileSelected(file);
       e.target.value = '';
     });
-
     document.getElementById('btnDownloadPhotos').addEventListener('click', downloadAllPhotos);
-
     document.getElementById('previewClose').addEventListener('click', () => {
-      document.getElementById('previewModal').classList.add('hidden');
-      document.getElementById('previewModal').classList.remove('flex');
+      const m = document.getElementById('previewModal');
+      m.classList.add('hidden'); m.classList.remove('flex');
     });
     document.getElementById('previewModal').addEventListener('click', (e) => {
       if (e.target.id === 'previewModal') {
-        e.target.classList.add('hidden');
-        e.target.classList.remove('flex');
+        e.target.classList.add('hidden'); e.target.classList.remove('flex');
       }
     });
-
-    // ESC to close
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        if (!document.getElementById('previewModal').classList.contains('hidden')) {
-          document.getElementById('previewModal').classList.add('hidden');
-          document.getElementById('previewModal').classList.remove('flex');
-        } else if (!document.getElementById('resetModal').classList.contains('hidden')) {
-          document.getElementById('resetModal').classList.add('hidden');
-          document.getElementById('resetModal').classList.remove('flex');
-        } else if (!document.getElementById('detailSheet').classList.contains('hidden')) {
-          closeDetail();
+        const preview = document.getElementById('previewModal');
+        if (!preview.classList.contains('hidden')) {
+          preview.classList.add('hidden'); preview.classList.remove('flex'); return;
         }
+        const reset = document.getElementById('resetModal');
+        if (!reset.classList.contains('hidden')) {
+          reset.classList.add('hidden'); reset.classList.remove('flex'); return;
+        }
+        const sheet = document.getElementById('detailSheet');
+        if (!sheet.classList.contains('hidden')) closeDetail();
       }
     });
 
