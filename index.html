@@ -777,6 +777,8 @@
       const laptop = allLaptops.find(l => l.id === id);
       if (!laptop) return;
       currentLaptop = laptop;
+      // Track the Asset No. at open time so we can detect changes on save
+      currentLaptop._lastKnownAsset = laptop.assetNo || '';
       currentPhotos = await db.photos.where('laptopId').equals(id).toArray();
 
       document.getElementById('detailNo').textContent = laptop.no;
@@ -873,9 +875,27 @@
         Object.assign(currentLaptop, patch);
         const idx = allLaptops.findIndex(l => l.id === currentLaptop.id);
         if (idx >= 0) allLaptops[idx] = { ...allLaptops[idx], ...patch };
+
+        // If Asset No. changed, refresh photo references so photo names update
+        // from LT-XXX_N to {assetNo}_N
+        const oldAsset = currentLaptop._lastKnownAsset || '';
+        if (patch.assetNo !== oldAsset) {
+          await refreshPhotoReference(currentLaptop.id);
+          currentLaptop._lastKnownAsset = patch.assetNo;
+          // Reload photos to reflect new names in UI
+          currentPhotos = await db.photos.where('laptopId').equals(currentLaptop.id).toArray();
+          renderPhotoGrid();
+        }
+
+        // Update meta info
+        const updatedLaptop = await db.laptops.get(currentLaptop.id);
+        if (updatedLaptop) {
+          document.getElementById('metaPhotoRef').textContent = updatedLaptop.photoReference || '—';
+        }
+        document.getElementById('metaUpdated').textContent = new Date(patch.updatedAt).toLocaleString('en-GB');
+
         renderStats();
         renderGrid();
-        document.getElementById('metaUpdated').textContent = new Date(patch.updatedAt).toLocaleString('en-GB');
         if (!autoStatusUpdate) toast('تم الحفظ', 'success');
       } catch (err) {
         console.error(err);
@@ -1047,6 +1067,85 @@
     }
 
     // ---------- OCR ----------
+    // ---------- Image Preprocessing for OCR ----------
+    // Convert to grayscale, increase contrast, and binarize to improve OCR accuracy
+    // on real-world asset tag photos (glare, low contrast, small text).
+    async function preprocessImageForOcr(blob, scale = 2) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          // Upscale small images so Tesseract has more pixels to work with
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, w, h);
+          URL.revokeObjectURL(img.src);
+
+          try {
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const data = imageData.data;
+
+            // Pass 1: Grayscale + contrast enhancement
+            const contrast = 1.6;
+            const intercept = 128 * (1 - contrast);
+            for (let i = 0; i < data.length; i += 4) {
+              const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+              let adjusted = gray * contrast + intercept;
+              if (adjusted < 0) adjusted = 0;
+              if (adjusted > 255) adjusted = 255;
+              data[i] = data[i + 1] = data[i + 2] = adjusted;
+            }
+
+            // Pass 2: Compute histogram for Otsu's threshold (binarization)
+            const hist = new Array(256).fill(0);
+            for (let i = 0; i < data.length; i += 4) {
+              hist[data[i]]++;
+            }
+            const total = w * h;
+            let sum = 0;
+            for (let t = 0; t < 256; t++) sum += t * hist[t];
+            let sumB = 0, wB = 0, varMax = 0, threshold = 128;
+            for (let t = 0; t < 256; t++) {
+              wB += hist[t];
+              if (wB === 0) continue;
+              const wF = total - wB;
+              if (wF === 0) break;
+              sumB += t * hist[t];
+              const mB = sumB / wB;
+              const mF = (sum - sumB) / wF;
+              const between = wB * wF * (mB - mF) * (mB - mF);
+              if (between > varMax) {
+                varMax = between;
+                threshold = t;
+              }
+            }
+
+            // Pass 3: Binarize using Otsu threshold
+            for (let i = 0; i < data.length; i += 4) {
+              const v = data[i] > threshold ? 255 : 0;
+              data[i] = data[i + 1] = data[i + 2] = v;
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            canvas.toBlob((outBlob) => {
+              resolve(outBlob || blob);
+            }, 'image/png');
+          } catch (e) {
+            console.warn('preprocess failed', e);
+            resolve(blob);
+          }
+        };
+        img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('Image load failed')); };
+        img.src = URL.createObjectURL(blob);
+      });
+    }
+
+    // ---------- OCR with multiple passes ----------
     async function runOcr(blob, target) {
       if (ocrBusy) return;
       ocrBusy = true;
@@ -1055,20 +1154,76 @@
       const text = document.getElementById('ocrProgressText');
       box.classList.remove('hidden');
       bar.style.width = '0%';
-      text.textContent = 'جارٍ قراءة الرقم من الصورة... 0%';
+      text.textContent = 'جارٍ تحسين الصورة...';
 
       try {
-        const result = await Tesseract.recognize(blob, 'eng', {
-          logger: m => {
-            if (m.status === 'recognizing text') {
-              const pct = Math.round(m.progress * 100);
-              bar.style.width = pct + '%';
-              text.textContent = `جارٍ قراءة الرقم من الصورة... ${pct}%`;
+        // === Step 1: Preprocess image (upscale 2x + grayscale + contrast + binarize) ===
+        const processedBlob = await preprocessImageForOcr(blob, 2);
+
+        // === Step 2: Run multiple OCR passes with different settings ===
+        const allTexts = [];
+
+        // Pass A: Original image, default settings (catches everything)
+        text.textContent = 'محاولة 1 من 3: الصورة الأصلية...';
+        bar.style.width = '10%';
+        try {
+          const r1 = await Tesseract.recognize(blob, 'eng', {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const pct = 10 + Math.round(m.progress * 25);
+                bar.style.width = pct + '%';
+                text.textContent = `محاولة 1 من 3: ${Math.round(m.progress * 100)}%`;
+              }
             }
-          }
-        });
-        const rawText = result.data.text.trim();
-        const id = extractLikelyId(rawText, target);
+          });
+          allTexts.push({ label: 'original-default', text: r1.data.text });
+        } catch (e) { console.warn('OCR pass A failed', e); }
+
+        // Pass B: Preprocessed image, default settings (better for low-contrast)
+        text.textContent = 'محاولة 2 من 3: الصورة المحسّنة...';
+        bar.style.width = '40%';
+        try {
+          const r2 = await Tesseract.recognize(processedBlob, 'eng', {
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const pct = 40 + Math.round(m.progress * 25);
+                bar.style.width = pct + '%';
+                text.textContent = `محاولة 2 من 3: ${Math.round(m.progress * 100)}%`;
+              }
+            }
+          });
+          allTexts.push({ label: 'preprocessed-default', text: r2.data.text });
+        } catch (e) { console.warn('OCR pass B failed', e); }
+
+        // Pass C: Preprocessed image with character whitelist
+        // For Asset: only E, X, digits. For Serial: alphanumeric.
+        text.textContent = 'محاولة 3 من 3: مع فلتر الأحرف...';
+        bar.style.width = '70%';
+        try {
+          const whitelist = target === 'assetNo'
+            ? 'EX0123456789'
+            : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          const r3 = await Tesseract.recognize(processedBlob, 'eng', {
+            tessedit_char_whitelist: whitelist,
+            tessedit_pageseg_mode: '6', // Assume a single uniform block of text
+            logger: m => {
+              if (m.status === 'recognizing text') {
+                const pct = 70 + Math.round(m.progress * 25);
+                bar.style.width = pct + '%';
+                text.textContent = `محاولة 3 من 3: ${Math.round(m.progress * 100)}%`;
+              }
+            }
+          });
+          allTexts.push({ label: 'preprocessed-whitelist', text: r3.data.text });
+        } catch (e) { console.warn('OCR pass C failed', e); }
+
+        bar.style.width = '100%';
+        text.textContent = 'جارٍ تحليل النتائج...';
+
+        // === Step 3: Extract ID from all collected texts ===
+        const combinedRaw = allTexts.map(t => t.text).join('\n\n---\n\n');
+        const id = extractLikelyId(combinedRaw, target);
+
         if (id) {
           if (target === 'assetNo') {
             document.getElementById('fAssetNo').value = id;
@@ -1077,49 +1232,79 @@
           }
           toast(`تم التعرف على: ${id}`, 'success', 'راجع النص قبل الحفظ');
         } else {
-          toast('لم أتعرف على رقم واضح', 'warning', rawText.slice(0, 80) || 'النص فارغ');
+          // Show raw text so user can manually copy the correct number
+          const preview = combinedRaw.replace(/\n+/g, ' ').slice(0, 120) || 'النص فارغ';
+          toast('لم أتعرف على رقم تلقائياً', 'warning', 'اقرأ النص واكتب الرقم يدوياً: ' + preview);
         }
       } catch (err) {
         console.error(err);
-        toast('فشل تشغيل OCR', 'error');
+        toast('فشل تشغيل OCR', 'error', err.message || '');
       } finally {
         ocrBusy = false;
-        setTimeout(() => box.classList.add('hidden'), 1000);
+        setTimeout(() => box.classList.add('hidden'), 1500);
       }
     }
 
+    // ---------- Smart ID Extraction ----------
     function extractLikelyId(rawText, target) {
       if (!rawText) return '';
 
       // ===== Preprocessing =====
-      // OCR often inserts spaces inside codes (e.g. "E X 9 1 X 1 2 3 4 5 6 7 8").
-      // Remove spaces between alphanumeric chars on each line.
+      // Collapse spaces between alphanumeric chars on each line.
+      // "E X 9 1 X 1 2 3 4 5 6 7 8" -> "EX91X12345678"
       const lines = rawText.split(/\n/).map(line => {
-        // Collapse single-character tokens separated by spaces: "E X 9 1" -> "EX91"
         return line.replace(/([A-Za-z0-9])\s+(?=[A-Za-z0-9])/g, '$1').trim();
       });
       const joined = lines.join('\n');
 
-      // ===== Asset No: pattern EX91X + 8 digits (or EX\d{2}X\d{8}) =====
-      // This is the most common Asset tag format for HP/Lenovo enterprise laptops.
+      // ===== Asset No: pattern EX91X + 6-8 digits =====
       if (target === 'assetNo') {
-        // Try strict pattern first: EX + 2 digits + X + 8 digits
-        // Allow optional spaces or dashes that survived preprocessing
-        const strictMatch = joined.match(/EX\d{2}X\d{8}/i);
+        // Try strict pattern first: EX + 2 digits + X + 6-8 digits
+        const strictMatch = joined.match(/EX\d{2}X\d{6,8}/i);
         if (strictMatch) return strictMatch[0].toUpperCase();
 
-        // Looser: EX + 2-3 digits + optional X + 8 digits
-        const looseMatch = joined.match(/EX\d{2,3}X?\d{8}/i);
+        // Looser: EX + 2-3 digits + optional X + 6-8 digits
+        const looseMatch = joined.match(/EX\d{2,3}X?\d{6,8}/i);
         if (looseMatch) return looseMatch[0].toUpperCase();
+
+        // === Fuzzy matching with OCR error correction ===
+        // Common OCR confusions: 0↔O, 1↔I/L, 5↔S, 8↔B, 6↔G, 2↔Z
+        // Try to find tokens that are close to the EX91X pattern and fix them.
+        const candidates = joined.match(/[A-Z0-9OILSBGZilox]{8,16}/gi) || [];
+        for (const cand of candidates) {
+          const upper = cand.toUpperCase();
+          // Normalize common OCR errors (only for pattern-matching purposes)
+          const normalized = upper
+            .replace(/[OoQqD]/g, '0')
+            .replace(/[IiLl|]/g, '1')
+            .replace(/[Ss]/g, '5')
+            .replace(/[Bb]/g, '8')
+            .replace(/[Gg]/g, '6')
+            .replace(/[Zz]/g, '2');
+
+          const m = normalized.match(/EX\d{2}X\d{6,8}/);
+          if (m) {
+            // Return the normalized version (this is what the asset should be)
+            return m[0];
+          }
+        }
 
         // Try labelled extraction (Asset No: ...)
         const labelled = joined.match(/asset\s*(?:no|tag|number|#)?\s*[:\-]?\s*([A-Za-z0-9][A-Za-z0-9\-]{3,})/i);
         if (labelled?.[1]) {
           const v = labelled[1].toUpperCase();
-          // If the labelled value itself matches the pattern, prefer it
-          if (/EX\d{2}X\d{8}/.test(v)) return v;
-          // Otherwise still return it (it's what OCR thinks the Asset is)
-          return v;
+          // Normalize labelled value too
+          const vNorm = v
+            .replace(/[OQD]/g, '0')
+            .replace(/[IL|]/g, '1')
+            .replace(/S/g, '5')
+            .replace(/B/g, '8')
+            .replace(/G/g, '6')
+            .replace(/Z/g, '2');
+          const m = vNorm.match(/EX\d{2}X\d{6,8}/);
+          if (m) return m[0];
+          // If labelled value is long enough, return as-is
+          if (v.length >= 6) return v;
         }
       }
 
@@ -1132,7 +1317,7 @@
         // Common Serial patterns:
         // - 10-char alphanumeric (e.g. 5CG1234XYZ)
         // - 7-char (e.g. CND1234)
-        const serialMatch = joined.match(/\b([A-Z]{2,4}\d{6,8})\b/) || joined.match(/\b(\d{10,12})\b/);
+        const serialMatch = joined.match(/\b([A-Z]{2,4}\d{6,8})\b/i) || joined.match(/\b(\d{10,12})\b/);
         if (serialMatch?.[1]) return serialMatch[1].toUpperCase();
       }
 
@@ -1147,16 +1332,27 @@
       let best = '', bestScore = -1;
       for (const tok of tokens) {
         if (tok.length < 3) continue;
-        const hasDigit = /\d/.test(tok);
-        const hasLetter = /[A-Za-z]/.test(tok);
+        // Normalize for scoring
+        const normalized = tok.toUpperCase()
+          .replace(/[OQD]/g, '0')
+          .replace(/[IL|]/g, '1')
+          .replace(/S/g, '5')
+          .replace(/B/g, '8')
+          .replace(/G/g, '6')
+          .replace(/Z/g, '2');
+        const hasDigit = /\d/.test(normalized);
+        const hasLetter = /[A-Z]/.test(normalized);
         let score = tok.length;
         if (hasDigit) score += 5;
         if (hasLetter) score += 2;
         if (hasDigit && hasLetter) score += 3;
         if (tok.length >= 5 && tok.length <= 20) score += 2;
-        // Boost tokens that match the EX91X pattern
-        if (/EX\d{2}X\d{8}/.test(tok)) score += 20;
-        if (score > bestScore) { bestScore = score; best = tok; }
+        // Strongly boost tokens that match the EX91X pattern after normalization
+        if (/EX\d{2}X\d{6,8}/.test(normalized)) score += 50;
+        if (score > bestScore) {
+          bestScore = score;
+          best = /EX\d{2}X\d{6,8}/.test(normalized) ? normalized : tok;
+        }
       }
       return best.toUpperCase();
     }
